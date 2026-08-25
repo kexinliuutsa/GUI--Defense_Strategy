@@ -1,3 +1,17 @@
+"""
+Unseen-generator validation for the frozen cross-scale defense.
+
+Protocol:
+- Leave one Raw-agent generator family entirely out of source-head
+  training and calibration.
+- Fit Human-reference models using Human data only.
+- Evaluate the held-out generator under Long-Tap humanization.
+- Do not tune thresholds using held-out attack data.
+
+This script reproduces the unseen-generator robustness analysis reported
+in results/unseen_generator_results.csv.
+"""
+
 from pathlib import Path
 import warnings
 import numpy as np
