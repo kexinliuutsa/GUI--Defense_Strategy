@@ -1,18 +1,15 @@
 {
   "version": "frozen_v1",
   "description": "Frozen operating configuration for the cross-scale behavioral defense.",
-
   "primary_operating_point": {
     "minimum_observed_actions": 4,
     "target_human_fpr": 0.025
   },
-
   "thresholds": {
     "session_distribution_head": 0.8703146248159933,
     "strict_cross_action_head": 0.9768090920254805,
     "human_reference_head": 1.1488039406123078
   },
-
   "decision_rule": {
     "base_detection": [
       "session_distribution_head",
@@ -23,7 +20,6 @@
     "human_reference_mode": "conditional_on_base_miss",
     "final_combination": "base_detection OR conditional_human_reference"
   },
-
   "training_policy": {
     "source_head_training_data": [
       "Human",
@@ -35,7 +31,6 @@
     "humanization_conditions_used_for_training": false,
     "humanization_conditions_used_for_threshold_tuning": false
   },
-
   "evaluation_policy": {
     "primary_rolling_start_action": 4,
     "human_evaluation": "participant-disjoint out-of-fold",
@@ -48,10 +43,14 @@
       "Office & Learning"
     ]
   },
-
   "known_scope_limits": {
     "fake_interval_exact_component_comparison": false,
     "fake_interval_reason": "Current offline replay uses a coordinate-materialized proxy.",
     "fully_adaptive_attacker_evaluated": false
+  },
+  "calibration": {
+    "human_reference_target_human_fpr": 0.01,
+    "fake_artifact_action_target_human_fpr": 0.005,
+    "fake_artifact_minimum_session_artifacts": 2
   }
 }
