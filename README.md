@@ -75,8 +75,10 @@ At the frozen operating point:
 | Long Tap | 76.6% |
 
 **Primary Human false-positive rate: 2.43%.**
+The complete session-level table is available in
+[`results/primary_session_results.md`](results/primary_session_results.md).
 
-The defense is trained and calibrated using clean Human and Raw-agent data only. Humanization conditions are evaluated after the operating point is frozen.
+The two source-classification heads are trained using clean Human and Raw-agent sessions. Human-reference and fake-artifact calibration use Human data only. Humanization conditions are not used to calibrate the reported operating thresholds.
 
 ---
 
@@ -153,17 +155,20 @@ Short prefixes produce substantially higher Human false-positive rates, supporti
 
 The main evaluation follows these constraints:
 
-- Source heads are trained using clean Human and Raw-agent data only.
-- Human-reference models use Human data only.
-- Humanization conditions do not retrain the final detector.
-- Primary thresholds are frozen before attack evaluation.
-- Human rolling false-positive rates use participant-disjoint out-of-fold predictions.
-- AHB task clusters are recovered from the original participant/session task provenance.
-- The primary rolling detector starts after four observed actions.
+- The Session Distribution and Strict Cross-Action heads are trained using clean Human and Raw-agent sessions only.
+- Human-reference models are fitted and calibrated using Human sessions only.
+- The Fake-Action Artifact Head is calibrated from Human raw actions only.
+- Humanization conditions are not used to tune the reported frozen thresholds.
+- Human false-positive evaluation uses participant-disjoint out-of-fold predictions where required by the protocol.
+- The primary rolling detector begins after four observed actions.
+- Prefixes with fewer than four actions return `insufficient_context` rather than being silently classified.
+- Fake Interval is excluded from the exact author-component comparison because the current offline replay uses a coordinate-materialized proxy.
 
-The detailed protocol is documented in:
+Implementation and validation commands are documented in `USAGE.md`.
 
-`docs/evaluation_protocol.md`
+Data requirements are documented in `DATA.md`.
+
+Result-specific protocol notes are documented in `results/README.md`.
 
 ---
 
@@ -172,44 +177,45 @@ The detailed protocol is documented in:
 ```text
 GUI--Defense_Strategy/
 ├── README.md
+├── USAGE.md
+├── DATA.md
 ├── requirements.txt
-│
 ├── configs/
 │   └── frozen_defense.json
-│
 ├── src/
+│   ├── __init__.py
 │   ├── defense.py
+│   ├── pipeline.py
 │   ├── features/
+│   │   ├── __init__.py
 │   │   ├── session_features.py
-│   │   ├── cross_action_features.py
-│   │   └── fake_action_features.py
+│   │   └── cross_action_features.py
 │   └── heads/
+│       ├── __init__.py
 │       ├── source_heads.py
 │       ├── human_reference.py
 │       └── fake_artifact.py
-│
 ├── evaluation/
-│   ├── component_evaluation.py
-│   ├── unseen_generator_validation.py
-│   ├── full_denominator_audit.py
-│   └── href_stability_audit.py
-│
-├── results/
-│   ├── README.md
-│   ├── ahb_table1_comparison.csv
-│   ├── primary_session_results.csv
-│   ├── unseen_generator_results.csv
-│   ├── full_denominator_table.csv
-│   └── href_stability_summary.csv
-│
-└── docs/
-    ├── methodology.md
-    ├── evaluation_protocol.md
-    └── limitations.md
+│   ├── feature_equivalence_test.py
+│   ├── source_head_equivalence_test.py
+│   ├── href_equivalence_test.py
+│   ├── fake_artifact_equivalence_test.py
+│   ├── full_pipeline_smoke_test.py
+│   ├── decision_routing_test.py
+│   └── historical_unseen_generator_analysis.py
+└── results/
+    ├── README.md
+    ├── primary_session_results.csv
+    ├── primary_session_results.md
+    ├── ahb_table1_comparison.csv
+    ├── ahb_table1_comparison.md
+    ├── unseen_generator_results.csv
+    ├── unseen_generator_results.md
+    ├── full_denominator_table.csv
+    ├── full_denominator_table.md
+    ├── href_stability_summary.csv
+    └── href_stability_summary.md
 ```
-
----
-
 ## Scope and Limitations
 
 The results should not be interpreted as evidence of an immutable behavioral fingerprint.
