@@ -17,3 +17,14 @@ __all__ = [
     "make_logistic_head",
     "validate_feature_frame",
 ]
+
+from .fake_artifact import (
+    FakeArtifactCalibration,
+    artifact_count,
+    artifact_flags,
+    calibrate_fake_artifact,
+    detect_from_artifact_count,
+    fake_artifact_detect,
+    gesture_metrics,
+    is_fake_artifact,
+)
