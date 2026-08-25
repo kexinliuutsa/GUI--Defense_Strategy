@@ -84,9 +84,11 @@ The defense is trained and calibrated using clean Human and Raw-agent data only.
 
 We additionally evaluate the frozen defense using the behavioral units and task clusters used in the Agent Humanization Benchmark (AHB).
 
-The complete comparison is available at:
+The full human-readable comparison is available in
+[`results/ahb_table1_comparison.md`](results/ahb_table1_comparison.md).
 
-`results/ahb_table1_comparison.csv`
+Machine-readable results are available in
+[`results/ahb_table1_comparison.csv`](results/ahb_table1_comparison.csv).
 
 One representative result is **Long Tap**, which directly targets tap-duration-based detection.
 
