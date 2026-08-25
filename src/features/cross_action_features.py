@@ -1,39 +1,50 @@
 """
-Frozen feature schema for the Strict Cross-Action Head.
+Frozen 17-dimensional Strict Cross-Action representation.
 
-The Strict Cross-Action representation intentionally excludes most
-within-action geometry and simple session bookkeeping features.
+This module selects the cross-action subset from the validated 54D
+session representation.
 
-It focuses on relationships across actions, including:
+The strict representation intentionally excludes:
 
-- direction organization,
-- spatial reuse,
-- inter-action timing,
+- action count,
+- point-count statistics,
+- total session span,
+- per-action absolute duration statistics,
+- displacement distributions,
+- path-length distributions.
+
+It retains:
+
+- gap structure,
+- direction structure,
+- coordinate reuse,
 - and cross-action coupling.
-
-Important:
-    This module freezes the feature schema used by the final defense.
-    Exact feature computation is kept separate so that the validated
-    experimental implementation can be ported without changing formulas.
 """
 
 from __future__ import annotations
 
-from typing import Iterable, Mapping
+from typing import Iterable, Mapping, Optional
 
 import numpy as np
 import pandas as pd
 
+from .session_features import (
+    extract_session_features,
+)
+
 
 # ---------------------------------------------------------------------
-# Frozen 17-dimensional representation
+# Frozen Strict Cross-Action schema
 # ---------------------------------------------------------------------
 
 STRICT_CROSS_ACTION_FEATURES = [
     "direction_resultant",
+
     "start_unique_cell_ratio",
     "end_unique_cell_ratio",
+
     "negative_gap_rate",
+
     "duration_displacement_corr",
 
     "log_gap_mean",
@@ -58,8 +69,10 @@ STRICT_CROSS_ACTION_DIM = len(
 
 
 if STRICT_CROSS_ACTION_DIM != 17:
+
     raise RuntimeError(
-        "Frozen Strict Cross-Action representation must contain 17 features."
+        "Frozen Strict Cross-Action representation "
+        "must contain exactly 17 features."
     )
 
 
@@ -70,19 +83,6 @@ if STRICT_CROSS_ACTION_DIM != 17:
 def validate_cross_action_features(
     feature_names: Iterable[str],
 ) -> None:
-    """
-    Verify that all frozen Strict Cross-Action features are available.
-
-    Parameters
-    ----------
-    feature_names:
-        Names available in an upstream feature representation.
-
-    Raises
-    ------
-    ValueError
-        If one or more required features are missing.
-    """
 
     available = set(
         feature_names
@@ -90,15 +90,165 @@ def validate_cross_action_features(
 
     missing = [
         feature
-        for feature in STRICT_CROSS_ACTION_FEATURES
+        for feature
+        in STRICT_CROSS_ACTION_FEATURES
         if feature not in available
     ]
 
     if missing:
+
         raise ValueError(
             "Missing Strict Cross-Action features: "
-            + ", ".join(missing)
+            +
+            ", ".join(
+                missing
+            )
         )
+
+
+# ---------------------------------------------------------------------
+# Select Strict subset from one session dictionary
+# ---------------------------------------------------------------------
+
+def select_cross_action_features(
+    session_features: Mapping[
+        str,
+        float,
+    ],
+) -> dict[str, float]:
+
+    validate_cross_action_features(
+        session_features.keys()
+    )
+
+    result = {}
+
+    for feature in (
+        STRICT_CROSS_ACTION_FEATURES
+    ):
+
+        try:
+
+            value = float(
+                session_features[
+                    feature
+                ]
+            )
+
+        except (
+            TypeError,
+            ValueError,
+        ):
+
+            value = 0.0
+
+
+        if not np.isfinite(
+            value
+        ):
+
+            value = 0.0
+
+
+        result[
+            feature
+        ] = value
+
+
+    return result
+
+
+# ---------------------------------------------------------------------
+# Direct gesture interface
+# ---------------------------------------------------------------------
+
+def extract_cross_action_features(
+    gestures,
+) -> Optional[dict[str, float]]:
+    """
+    Extract the frozen 17D Strict Cross-Action representation directly
+    from a session's gestures.
+    """
+
+    session = (
+        extract_session_features(
+            gestures
+        )
+    )
+
+    if session is None:
+        return None
+
+    return (
+        select_cross_action_features(
+            session
+        )
+    )
+
+
+# ---------------------------------------------------------------------
+# Vector interface
+# ---------------------------------------------------------------------
+
+def cross_action_vector(
+    features: Mapping[
+        str,
+        float,
+    ],
+) -> np.ndarray:
+
+    selected = (
+        select_cross_action_features(
+            features
+        )
+    )
+
+    vector = np.asarray(
+        [
+            selected[
+                feature
+            ]
+            for feature
+            in STRICT_CROSS_ACTION_FEATURES
+        ],
+        dtype=float,
+    )
+
+    if vector.shape != (
+        STRICT_CROSS_ACTION_DIM,
+    ):
+
+        raise RuntimeError(
+            "Unexpected Strict Cross-Action vector shape: "
+            f"{vector.shape}"
+        )
+
+    return vector
+
+
+def extract_cross_action_vector(
+    gestures,
+) -> Optional[np.ndarray]:
+    """
+    Convenience interface:
+
+        gestures -> validated session features -> frozen 17D vector
+    """
+
+    features = (
+        extract_cross_action_features(
+            gestures
+        )
+    )
+
+    if features is None:
+        return None
+
+    return (
+        cross_action_vector(
+            features
+        )
+    )
 
 
 # ---------------------------------------------------------------------
@@ -108,20 +258,12 @@ def validate_cross_action_features(
 def select_cross_action_dataframe(
     df: pd.DataFrame,
 ) -> pd.DataFrame:
-    """
-    Select the frozen 17D Strict Cross-Action representation.
-
-    Non-finite values follow the evaluation pipeline convention:
-    infinities are converted to NaN and missing values are filled with 0.
-
-    The column order is always identical to the frozen model schema.
-    """
 
     validate_cross_action_features(
         df.columns
     )
 
-    result = (
+    return (
         df[
             STRICT_CROSS_ACTION_FEATURES
         ]
@@ -130,27 +272,22 @@ def select_cross_action_dataframe(
             errors="coerce",
         )
         .replace(
-            [np.inf, -np.inf],
+            [
+                np.inf,
+                -np.inf,
+            ],
             np.nan,
         )
-        .fillna(0.0)
+        .fillna(
+            0.0
+        )
         .copy()
     )
-
-    return result
 
 
 def cross_action_matrix(
     df: pd.DataFrame,
 ) -> np.ndarray:
-    """
-    Convert a feature DataFrame into the frozen model input matrix.
-
-    Returns
-    -------
-    np.ndarray
-        Shape: (n_samples, 17)
-    """
 
     selected = (
         select_cross_action_dataframe(
@@ -168,68 +305,10 @@ def cross_action_matrix(
         matrix.shape[1]
         != STRICT_CROSS_ACTION_DIM
     ):
+
         raise RuntimeError(
             "Unexpected Strict Cross-Action matrix shape: "
             f"{matrix.shape}"
         )
 
     return matrix
-
-
-# ---------------------------------------------------------------------
-# Single-record interface
-# ---------------------------------------------------------------------
-
-def cross_action_vector(
-    features: Mapping[str, float],
-) -> np.ndarray:
-    """
-    Convert one precomputed feature dictionary into the frozen 17D vector.
-    """
-
-    validate_cross_action_features(
-        features.keys()
-    )
-
-    values = []
-
-    for feature in STRICT_CROSS_ACTION_FEATURES:
-
-        value = features[
-            feature
-        ]
-
-        try:
-            value = float(
-                value
-            )
-
-        except (
-            TypeError,
-            ValueError,
-        ):
-            value = 0.0
-
-        if not np.isfinite(
-            value
-        ):
-            value = 0.0
-
-        values.append(
-            value
-        )
-
-    result = np.asarray(
-        values,
-        dtype=float,
-    )
-
-    if result.shape != (
-        STRICT_CROSS_ACTION_DIM,
-    ):
-        raise RuntimeError(
-            "Unexpected Strict Cross-Action vector shape: "
-            f"{result.shape}"
-        )
-
-    return result
