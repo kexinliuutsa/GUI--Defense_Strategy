@@ -1,0 +1,21 @@
+task_cluster,condition,swipe_accuracy,interval_accuracy,tap_accuracy
+Social Media,Raw,0.9451,0.9656,0.9395
+Social Media,B-spline,0.9451,0.9656,0.9395
+Social Media,History,0.9451,0.9656,0.9395
+Social Media,Long Tap,0.8902,0.8948,0.8736
+Shopping,Raw,0.9755,0.9633,0.9348
+Shopping,B-spline,0.9755,0.9633,0.9348
+Shopping,History,0.9755,0.9633,0.9348
+Shopping,Long Tap,0.9325,0.8883,0.8531
+Video Streaming,Raw,0.9150,0.9531,0.9408
+Video Streaming,B-spline,0.9150,0.9531,0.9408
+Video Streaming,History,0.9109,0.9527,0.9408
+Video Streaming,Long Tap,0.8826,0.9010,0.8842
+Trip Planning,Raw,0.9754,0.9698,0.9425
+Trip Planning,B-spline,0.9754,0.9698,0.9425
+Trip Planning,History,0.9718,0.9696,0.9425
+Trip Planning,Long Tap,0.9331,0.8964,0.8654
+Office & Learning,Raw,0.9750,0.9716,0.9470
+Office & Learning,B-spline,0.9750,0.9716,0.9470
+Office & Learning,History,0.9750,0.9716,0.9470
+Office & Learning,Long Tap,0.9750,0.9370,0.9054
