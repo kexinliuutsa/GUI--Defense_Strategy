@@ -54,12 +54,18 @@ Session Distribution
 Strict Cross-Action
         OR
 Fake-Action Artifact
-        OR
+        |
+        v
+    Base Detection
+        |
+        | base miss only
+        v
 Conditional Human-Reference
-        ↓
-Final Detection
+        |
+        v
+   Final Detection
 ```
-The frozen configuration is stored in:`configs/frozen_defense.json`
+The frozen configuration is stored in `configs/frozen_defense.json`.
 
 ## Main Results
 
@@ -237,18 +243,29 @@ Important limitations include:
 
 ## Reproducibility
 
-The repository separates clean training/calibration from humanization evaluation and stores the frozen operating parameters explicitly.
+The cleaned repository separates validated implementation code from frozen
+reviewer-facing result tables.
 
-Evaluation scripts reproduce:
+The included validation tests verify:
 
-- session-level detection,
-- AHB-compatible component evaluation,
-- unseen-generator validation,
-- full-denominator rolling evaluation,
-- Human-reference stability diagnostics.
+- equivalence of the 54D session and 17D Strict Cross-Action feature extractors,
+- equivalence of the learned source-head feature selection and probability scores,
+- equivalence of Human-reference calibration and scoring,
+- equivalence of Fake-Action Artifact calibration and decisions,
+- end-to-end pipeline assembly,
+- frozen conditional-routing behavior.
 
+The feature and component equivalence tests match the validated historical
+implementations exactly or within machine-precision numerical tolerance.
+
+Frozen reviewer-facing evaluation tables are stored under `results/`.
+
+The unseen-generator table is retained together with its historical analysis
+script. That script depends on intermediate experiment artifacts that are not
+redistributed in this cleaned repository.
 ## Status
 
 The defense architecture and primary operating point are frozen.
 
 Current work focuses on reproducibility packaging and paper artifacts rather than further detector tuning.
+---
