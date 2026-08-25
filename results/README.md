@@ -26,6 +26,17 @@ Fake Interval is excluded from the exact component comparison because the curren
 [`full_denominator_table.md`](./full_denominator_table.md) evaluates the frozen
 rolling defense on every behavioral prefix, including actions 1--3.
 
+## Human-Reference Stability Audit
+
+[`href_stability_summary.md`](./href_stability_summary.md) examines continuous
+Human-reference score changes under B-spline and History Matching.
+
+The audit distinguishes continuous-score shifts from actual final-decision
+changes and verifies that the largest B-spline HREF outliers do not enter the
+conditional Human-reference path.
+
+No model or threshold is modified based on this diagnostic evaluation.
+
 This audit tests whether the primary `prefix >= 4` results depend on excluding
 early actions.
 
