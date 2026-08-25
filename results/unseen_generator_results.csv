@@ -1,4 +1,12 @@
-attack,n_generators,n_sessions,nb_fixed,strict_fixed,candidate_fixed,worst_generator,worst_detection
-Only Swipe Humanized,2,57,1.0,1.0,1.0,GPT4o,1.0
-Rot Tap Humanized,5,158,0.9746835443037974,1.0,1.0,GPT4o,1.0
-Fake Rot Tap Humanized,3,291,0.0,0.30927835051546393,0.872852233676976,UI-TARS,0.7333333333333333
+result_type,generator,metric,value
+aggregate,ALL,micro_base_detection,0.6333
+aggregate,ALL,micro_final_detection,0.7575
+aggregate,ALL,micro_gain_pp,12.42
+aggregate,ALL,macro_base_detection,0.6300
+aggregate,ALL,macro_final_detection,0.7428
+aggregate,ALL,macro_gain_pp,11.28
+held_out,Claude,final_detection,1.0000
+held_out,GPT-4o,final_detection,1.0000
+held_out,CPM,final_detection,0.6316
+held_out,AutoGLM,final_detection,0.5684
+held_out,UI-TARS,final_detection,0.5140
