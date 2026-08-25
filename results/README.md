@@ -20,3 +20,13 @@ The `ours_*` columns are produced by the frozen cross-scale defense.
 - The statistical units are aligned where possible, but the classifier training protocols are not identical.
 
 Fake Interval is excluded from the exact component comparison because the current offline implementation uses a coordinate-materialized replay proxy.
+
+## Full-Denominator Audit
+
+[`full_denominator_table.md`](./full_denominator_table.md) evaluates the frozen
+rolling defense on every behavioral prefix, including actions 1--3.
+
+This audit tests whether the primary `prefix >= 4` results depend on excluding
+early actions.
+
+No thresholds are modified based on this evaluation.
