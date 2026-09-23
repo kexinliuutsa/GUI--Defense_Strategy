@@ -1,271 +1,72 @@
 # Cross-Scale Behavioral Defense for Humanized GUI Agents
 
-This repository contains a cross-scale behavioral defense for detecting humanized mobile GUI-agent behavior.
-
-Existing behavioral detectors often operate on individual actions, making them vulnerable to humanization strategies that directly modify the targeted representation. In our experiments, suppressing one behavioral representation does not necessarily eliminate all source-conditioned structure. Detectable structure can remain at other behavioral scales, such as session-level distributions and relationships across actions.
-
-Our defense combines multiple complementary behavioral views rather than relying on a single human-vs-agent fingerprint.
-
----
+This repository contains a frozen V1+V2+V3 behavioral defense for detecting humanized mobile GUI-agent behavior.
 
 ## Defense Architecture
 
-The frozen defense contains four components.
+The current public defense replaces the previous four-component cross-scale implementation with a hardened three-layer frozen defense.
 
-### 1. Session Distribution Head
-
-Models behavioral statistics across a session while excluding simple bookkeeping shortcuts such as action count, total session span, and point-count statistics.
-
-The remaining representation captures properties such as inter-action timing, action-duration distributions, spatial reuse, and behavioral variability.
-
-### 2. Strict Cross-Action Head
-
-Focuses on relationships between actions rather than the internal geometry of individual gestures.
-
-Examples include:
-
-- inter-action gap statistics,
-- direction consistency,
-- start/end location reuse,
-- duration-displacement coupling,
-- consecutive-action similarity.
-
-This head is designed to remain useful when individual swipe trajectories have already been humanized.
-
-### 3. Fake-Action Artifact Head
-
-Some fake-action strategies introduce closed-loop actions that travel a substantial distance but end close to their starting point.
-
-We include a lightweight specialized detector for this artifact.
-
-This component is treated as attack-family-specific rather than as a universal agent signature.
-
-### 4. Conditional Human-Reference Head
-
-A source classifier may be crossed without the resulting behavior actually entering the Human distribution.
-
-The Human-reference head therefore checks whether a base-detector miss still lies outside Human behavioral support.
-
-It is consulted only when the three base heads do not already detect the session.
+The final decision is:
 
 ```text
-Session Distribution
-        OR
-Strict Cross-Action
-        OR
-Fake-Action Artifact
-        |
-        v
-    Base Detection
-        |
-        | base miss only
-        v
-Conditional Human-Reference
-        |
-        v
-   Final Detection
-```
-The frozen configuration is stored in `configs/frozen_defense.json`.
+Final Detection = V1 OR V2 OR V3
+V1. Source / Human-Reference Behavioral Ensemble
 
-## Main Results
+V1 corresponds to the original cross-scale behavioral defense. It combines:
 
-### Session-Level Detection
+Session Distribution Head
+Strict Cross-Action Head
+Fake-Action Artifact Head
+Conditional Human-Reference Head
 
-At the frozen operating point:
+This layer captures session-level distributions, cross-action relationships, fake-action artifacts, and whether a base-detector miss still lies outside Human behavioral support.
 
-| Condition | Detection Rate |
-|---|---:|
-| Raw agents | 100.0% |
-| B-spline | 100.0% |
-| History Matching | 100.0% |
-| Long Tap | 76.6% |
+V2. Temporal-Shape Head
 
-**Primary Human false-positive rate: 2.43%.**
-The complete session-level table is available in
-[`results/primary_session_results.md`](results/primary_session_results.md).
+V2 is a temporal-shape detector. It extracts gesture-level timestamp-rhythm features and applies a frozen temporal policy.
 
-The two source-classification heads are trained using clean Human and Raw-agent sessions. Human-reference and fake-artifact calibration use Human data only. Humanization conditions are not used to calibrate the reported operating thresholds.
+The required temporal policy artifact is stored at:
 
----
+results/defense_v2_temporal_policy.joblib
 
-## Comparison with AHB Table 1
+The temporal feature implementation is stored at:
 
-We additionally evaluate the frozen defense using the behavioral units and task clusters used in the Agent Humanization Benchmark (AHB).
+src/heads/temporal_shape.py
+V3. Task-Cluster Action-Interval Head
 
-The full human-readable comparison is available in
-[`results/ahb_table1_comparison.md`](results/ahb_table1_comparison.md).
+V3 is a task-cluster-specific action-interval head. It computes inter-gesture intervals from each gesture's start and end timestamps and checks whether the interval violation rate exceeds the frozen threshold.
 
-Machine-readable results are available in
-[`results/ahb_table1_comparison.csv`](results/ahb_table1_comparison.csv).
+V3 is mainly a long-gap interval detector rather than a short-gap detector.
 
-One representative result is **Long Tap**, which directly targets tap-duration-based detection.
+The task-cluster lookup data is stored at:
 
-| Domain | AHB Tap Accuracy | Ours |
-|---|---:|---:|
-| Social Media | 63.4% | **93.3%** |
-| Shopping | 61.3% | **90.8%** |
-| Video Streaming | 61.9% | **93.6%** |
-| Trip Planning | 62.6% | **91.9%** |
-| Office & Learning | 62.6% | **95.3%** |
-
-These results suggest that modifying tap duration can substantially weaken the targeted tap detector while leaving source-conditioned structure detectable at other behavioral scales.
-
-For Swipe units, our reported accuracy uses an AHB-style 30% stratified reporting denominator. The cross-scale detector itself remains frozen and is not retrained on each humanization condition.
-
----
-
-## Swipe Humanization
-
-B-spline and History Matching modify the intra-swipe representation targeted by the original action-level detector.
-
-The frozen cross-scale decision is highly stable:
-
-| Humanization | Final-Decision Flip Rate |
-|---|---:|
-| B-spline | 0.0000% |
-| History Matching | 0.0263% |
-
-We interpret this as **decision robustness** rather than claiming representation invariance.
-
-Detailed score-stability diagnostics are provided in:
-
-`results/href_stability_summary.csv`
-
----
-
-## Full-Denominator Audit
-
-The primary rolling detector begins after four observed actions because cross-action context is required.
-
-We also evaluate every prefix, including actions 1–3, to verify that the result is not caused by excluding difficult early actions.
-
-Under this full-denominator evaluation, Long-Tap tap-level accuracy remains high:
-
-| Domain | Ours, All Prefixes |
-|---|---:|
-| Social Media | 87.4% |
-| Shopping | 85.3% |
-| Video Streaming | 88.4% |
-| Trip Planning | 86.5% |
-| Office & Learning | 90.5% |
-
-Detailed results are available in:
-
-`results/full_denominator_table.csv`
-
-Short prefixes produce substantially higher Human false-positive rates, supporting the four-action requirement as an operational context requirement rather than an attack-specific filtering rule.
-
----
-
-## Evaluation Protocol
-
-The main evaluation follows these constraints:
-
-- The Session Distribution and Strict Cross-Action heads are trained using clean Human and Raw-agent sessions only.
-- Human-reference models are fitted and calibrated using Human sessions only.
-- The Fake-Action Artifact Head is calibrated from Human raw actions only.
-- Humanization conditions are not used to tune the reported frozen thresholds.
-- Human false-positive evaluation uses participant-disjoint out-of-fold predictions where required by the protocol.
-- The primary rolling detector begins after four observed actions.
-- Prefixes with fewer than four actions return `insufficient_context` rather than being silently classified.
-- Fake Interval is excluded from the exact author-component comparison because the current offline replay uses a coordinate-materialized proxy.
-
-Implementation and validation commands are documented in `USAGE.md`.
-
-Data requirements are documented in `DATA.md`.
-
-Result-specific protocol notes are documented in `results/README.md`.
-
----
-
-## Repository Structure
-
-```text
+results/ahb_cheap_layer/session_predictions.csv
+Repository Structure
 GUI--Defense_Strategy/
 ├── README.md
 ├── USAGE.md
 ├── DATA.md
 ├── requirements.txt
-├── configs/
-│   └── frozen_defense.json
 ├── src/
 │   ├── __init__.py
 │   ├── defense.py
-│   ├── pipeline.py
-│   ├── features/
-│   │   ├── __init__.py
-│   │   ├── session_features.py
-│   │   └── cross_action_features.py
 │   └── heads/
 │       ├── __init__.py
-│       ├── source_heads.py
-│       ├── human_reference.py
-│       └── fake_artifact.py
+│       └── temporal_shape.py
 ├── evaluation/
-│   ├── feature_equivalence_test.py
-│   ├── source_head_equivalence_test.py
-│   ├── href_equivalence_test.py
-│   ├── fake_artifact_equivalence_test.py
-│   ├── full_pipeline_smoke_test.py
-│   ├── decision_routing_test.py
-│   └── historical_unseen_generator_analysis.py
+│   └── run_blackbox_attack.py
 └── results/
-    ├── README.md
-    ├── primary_session_results.csv
-    ├── primary_session_results.md
-    ├── ahb_table1_comparison.csv
-    ├── ahb_table1_comparison.md
-    ├── unseen_generator_results.csv
-    ├── unseen_generator_results.md
-    ├── full_denominator_table.csv
-    ├── full_denominator_table.md
-    ├── href_stability_summary.csv
-    └── href_stability_summary.md
-```
-## Scope and Limitations
+    ├── defense_v2_temporal_policy.joblib
+    └── ahb_cheap_layer/
+        └── session_predictions.csv
+Public Entry Point
 
-The results should not be interpreted as evidence of an immutable behavioral fingerprint.
+The main public defense implementation is:
 
-The current evidence supports a narrower claim:
+src/defense.py
 
-> Under the evaluated humanization mechanisms, suppressing one behavioral representation does not necessarily eliminate all source-conditioned structure. Detectable structure can remain at other behavioral scales.
+It exposes the hardened frozen V1+V2+V3 defense.
 
-Important limitations include:
+Status
 
-- B-spline, History Matching, and Long Tap are predefined humanization mechanisms rather than fully adaptive attacks against the final defense.
-- Performance is generator-dependent.
-- The primary rolling detector requires four observed actions before producing its operational decision.
-- Fake Interval currently relies on a coordinate-materialized offline replay proxy and is therefore excluded from the exact author-component comparison.
-- Rare heavy-tailed Human-reference score changes exist, although the largest observed cases do not affect the final conditional decision.
-- The current results demonstrate attack-transfer barriers under the evaluated threat model, not permanent robustness against a fully adaptive attacker.
-
----
-
-## Reproducibility
-
-The cleaned repository separates validated implementation code from frozen
-reviewer-facing result tables.
-
-The included validation tests verify:
-
-- equivalence of the 54D session and 17D Strict Cross-Action feature extractors,
-- equivalence of the learned source-head feature selection and probability scores,
-- equivalence of Human-reference calibration and scoring,
-- equivalence of Fake-Action Artifact calibration and decisions,
-- end-to-end pipeline assembly,
-- frozen conditional-routing behavior.
-
-The feature and component equivalence tests match the validated historical
-implementations exactly or within machine-precision numerical tolerance.
-
-Frozen reviewer-facing evaluation tables are stored under `results/`.
-
-The unseen-generator table is retained together with its historical analysis
-script. That script depends on intermediate experiment artifacts that are not
-redistributed in this cleaned repository.
-## Status
-
-The defense architecture and primary operating point are frozen.
-
-Current work focuses on reproducibility packaging and paper artifacts rather than further detector tuning.
----
+The public repository currently contains the frozen V1+V2+V3 defense implementation and required frozen artifacts.
